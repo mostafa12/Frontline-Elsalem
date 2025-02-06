@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include frontline_elsalem *.css
+recursive-include frontline_elsalem *.csv
+recursive-include frontline_elsalem *.html
+recursive-include frontline_elsalem *.ico
+recursive-include frontline_elsalem *.js
+recursive-include frontline_elsalem *.json
+recursive-include frontline_elsalem *.md
+recursive-include frontline_elsalem *.png
+recursive-include frontline_elsalem *.py
+recursive-include frontline_elsalem *.svg
+recursive-include frontline_elsalem *.txt
+recursive-exclude frontline_elsalem *.pyc
