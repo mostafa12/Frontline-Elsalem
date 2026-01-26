@@ -1,0 +1,102 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-06-24 13:54:48.187274",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "paymenttype",
+  "installments",
+  "paid",
+  "remaining",
+  "paymentmethod",
+  "bank",
+  "branch",
+  "checknumber",
+  "checkstatus",
+  "duedate",
+  "paymentdate"
+ ],
+ "fields": [
+  {
+   "fieldname": "paymenttype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "\u0646\u0648\u0639 \u0627\u0644\u062f\u0641\u0639\u0647",
+   "options": "Payment Type"
+  },
+  {
+   "fieldname": "installments",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "\u0627\u0644\u0623\u0642\u0633\u0627\u0637 "
+  },
+  {
+   "fieldname": "paid",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "\u0627\u0644\u0645\u0633\u062f\u062f"
+  },
+  {
+   "fieldname": "remaining",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "\u0627\u0644\u0645\u062a\u0628\u0642\u0649"
+  },
+  {
+   "fieldname": "paymentmethod",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "\u0646\u0648\u0639 \u0627\u0644\u0633\u062f\u0627\u062f",
+   "options": "Mode of Payment"
+  },
+  {
+   "fieldname": "bank",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "\u0628\u0646\u0643 "
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "\u0641\u0631\u0639 "
+  },
+  {
+   "fieldname": "checknumber",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "\u0631\u0642\u0645 \u0627\u0644\u0634\u064a\u0643"
+  },
+  {
+   "fieldname": "checkstatus",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "\u062d\u0627\u0644\u0629 \u0627\u0644\u0634\u064a\u0643 "
+  },
+  {
+   "fieldname": "duedate",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0625\u0633\u062a\u062d\u0642\u0627\u0642 "
+  },
+  {
+   "fieldname": "paymentdate",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0633\u062f\u0627\u062f"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-06-26 12:52:16.292685",
+ "modified_by": "Administrator",
+ "module": "Frontline Elsalem",
+ "name": "Contract details",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

@@ -1,0 +1,113 @@
+<h2 class="text-center">{%= __("كشف حساب العملاء") %}</h2>
+
+<h4 class="text-center">
+    cost center : {% if (filters.cost_center){ %} {%= filters.cost_center %} {% } %}
+</h4>
+
+<div style="display: flex; flex-direction: row-reverse; justify-content: space-between;">
+  
+  <div style="text-align: right;">
+    {% for(var i=0, l=6; i<l; i++) { %}
+      <div style="font-size: var(--text-base);">{%= report.raw_data.report_summary[i].label %} : {%= report.raw_data.report_summary[i].value %}</div>
+      {% } %}
+    </div>
+     
+  <div style="text-align: right;">
+    {% for(var i=6, l=report.raw_data.report_summary.length; i<l; i++) { %}
+      <div style="font-size: var(--text-base);">{%= report.raw_data.report_summary[i].label %} : {%= report.raw_data.report_summary[i].value %}</div>
+    {% } %}
+    </div>
+   
+</div>
+<hr />
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th style="">{%= __("نوع الدفعه") %}</th>
+      <th style="">{%= __("تاريخ التعاقد") %}</th>
+      <th style="">{%= __("نوع السداد") %}</th>
+      <th style="">{%= __("payment_enrty_name") %}</th>
+      <th style="">{%= __("قيمة الشيك") %}</th>
+      <th style="">{%= __("تاريخ استحقاق الشيك") %}</th>
+      <th style="">{%= __("رقم الشيك") %}</th>
+      <th style="">{%= __("البنك المسحوب عليه") %}</th>
+      <th style="">{%= __("الفرع") %}</th>
+      <th style="">{%= __("paid_to") %}</th>
+      <th style="">{%= __("المحصل من الشيكات") %}</th>
+      <th style="">{%= __("transfered") %}</th>
+      <th style="">{%= __("المتبقى على العميل") %}</th>
+    </tr>
+  </thead>
+  <tbody>
+
+    {% for(var i=0, l=data.length; i<l; i++) { %}
+    <tr>
+      <td {% if (data[i].indent === 0) { %} style="font-weight: bold;" {% } else{ %}style="font-weight: normal;"{% } %}>{%= data[i].payment_method %}</td>
+        <td>{%= data[i].transaction_date %}</td>
+        <td>{%= data[i].mode_of_payment %}</td>
+        <td>{%= data[i].payment_enrty_name %}</td>
+        <td {% if (data[i].indent === 0) { %} style="font-weight: bold;" {% } else{ %}style="font-weight: normal;"{% } %}>{%= frappe.format(data[i].paid_amount, {"fieldtype":"Currency"}).replace('EGP','') %}</td>
+        <td>{%= data[i].reference_date %}</td>
+        <td>{%= data[i].reference_no %}</td>
+        <td>{%= data[i].bank_name %}</td>
+        <td>{%= data[i].branch_name %}</td>
+        <td>{%= data[i].paid_to %}</td>
+        <td {% if (data[i].indent === 0) { %} style="font-weight: bold;" {% } else{ %}style="font-weight: normal;"{% } %}>{%= frappe.format(data[i].bank_taken_value ,{"fieldtype":"Currency"}).replace('EGP','') %}</td>
+        <td {% if (data[i].indent === 0) { %} style="font-weight: bold;" {% } else{ %}style="font-weight: normal;"{% } %}>{%= data[i].transfered %}</td>
+        <td {% if (data[i].indent === 0) { %} style="font-weight: bold;" {% } else{ %}style="font-weight: normal;"{% } %}>{%= frappe.format(data[i].rest,{"fieldtype":"Currency"}).replace('EGP','') %}</td>
+      </tr>
+    {% } %}
+
+  </tbody>
+</table>
+
+<h2 style="text-align: right;">الاجماليات</h2>
+<table class="table table-bordered" style="text-align: right;">
+<tbody style="text-align: right;">
+  <tr >
+    <td>{%= report.raw_data.report_summary[4].value - data[0].bank_taken_value %}</td>
+    <td>المتبقي</td>
+    <td>{%= data[0].bank_taken_value %}</td>
+    <td>اجمالي المسدد</td>
+    <td>{%= report.raw_data.report_summary[4].value %}</td>
+    <td>اجمالي الوحده</td>
+  </tr>
+  <tr >
+    {% for(var i=0, l=data.length; i<l; i++) { %}
+      {% if (data[i].indent === 0 && i !== 0) { %}
+      <td>{%= report.raw_data.report_summary[3].value  - data[i].bank_taken_value %}</td>
+      <td>المتبقي</td>
+      <td>{%= data[i].bank_taken_value %}</td>
+      <td>اجمالي المسدد</td>
+      {% } %}
+    {% } %}
+
+    <td>{%= report.raw_data.report_summary[3].value %}</td>
+    <td>اجمالي مصاريف الصيانه</td>
+  </tr>
+  <tr>
+    {% for(var i=0, l=6; i<l; i++) { %}
+    <td></td>
+    {% } %}
+  </tr>
+  <tr>
+    {% for(var i=0, l=data.length; i<l; i++) { %}
+     {% if (data[i].indent === 0 && i !== 0) { %}
+      <td>{%= report.raw_data.report_summary[5].value - (data[i].bank_taken_value + data[0].bank_taken_value) %}</td>
+      <td></td>
+      <td>{%= data[i].bank_taken_value + data[0].bank_taken_value %}</td>
+     {% } %}
+    {% } %}
+    <td></td>
+    <td>{%= report.raw_data.report_summary[5].value %}</td>
+    <td>الاجمالي العام</td>
+  </tr>
+</tbody>
+</table>
+
+
+
+
+
+
+

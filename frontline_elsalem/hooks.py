@@ -31,7 +31,10 @@ app_license = "MIT"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {
+	"Payment Entry" : "public/js/payment_entry.js",
+	"Sales Invoice" : "public/js/sales_invoice.js"
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -88,41 +91,33 @@ app_license = "MIT"
 # Override standard doctype classes
 
 # override_doctype_class = {
-#	"ToDo": "custom_app.overrides.CustomToDo"
+# 	"Payment Entry": "frontline_elsalem.overrides.payment_entry.CustomPaymentEntry"
 # }
 
 # Document Events
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-#	"*": {
-#		"on_update": "method",
-#		"on_cancel": "method",
-#		"on_trash": "method"
-#	}
-# }
+doc_events = {
+	"Sales Invoice": {
+		"before_cancel": "frontline_elsalem.overrides.sales_invoice.before_cancel"
+	},
+	"Payment Entry": {
+		"on_trash": "frontline_elsalem.overrides.payment_entry.unlink_unit_rent_details",
+		"validate": "frontline_elsalem.overrides.payment_entry.validate_unit_paid_amounts",
+		"on_submit": "frontline_elsalem.overrides.payment_entry.on_submit",
+		"before_cancel": "frontline_elsalem.overrides.payment_entry.before_cancel"
+	}
+}
 
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-#	"all": [
-#		"frontline_elsalem.tasks.all"
-#	],
-#	"daily": [
-#		"frontline_elsalem.tasks.daily"
-#	],
-#	"hourly": [
-#		"frontline_elsalem.tasks.hourly"
-#	],
-#	"weekly": [
-#		"frontline_elsalem.tasks.weekly"
-#	]
-#	"monthly": [
-#		"frontline_elsalem.tasks.monthly"
-#	]
-# }
+scheduler_events = {
+	"daily": [
+		"frontline_elsalem.frontline_elsalem.doctype.unit.unit.update_revenue_share_amount"
+	]
+}
 
 # Testing
 # -------

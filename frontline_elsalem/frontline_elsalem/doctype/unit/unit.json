@@ -1,0 +1,409 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:unit_number",
+ "creation": "2024-06-24 12:24:47.451700",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "unit_type",
+  "section_break_2",
+  "unit_number",
+  "unit_status",
+  "contract_date",
+  "maintenance_date",
+  "reserve_date",
+  "customer_link",
+  "delivery_date",
+  "column_break_rizml",
+  "company",
+  "block",
+  "floor",
+  "cost_center",
+  "features_section",
+  "unit_area",
+  "room",
+  "bathroom",
+  "has_garden",
+  "has_roof",
+  "column_break_n4hfn",
+  "facing",
+  "unit_case",
+  "stage_number",
+  "commercial_section_section",
+  "location_number",
+  "brand_name",
+  "column_break_28",
+  "unit_sqm",
+  "occupancy",
+  "unit_construction_section",
+  "fully_finished",
+  "semi_finished",
+  "pricing_section",
+  "unit_price",
+  "column_break_vjyk2",
+  "maintenance_price",
+  "rent_contract_details_section",
+  "rent_contract_start_date",
+  "rent_contract_duration",
+  "rent_contract_end_date",
+  "is_revenue_share",
+  "column_break_abav",
+  "monthly_rent_amount",
+  "rent_contract_increase_percent",
+  "revenue_percent",
+  "section_break_ffvb",
+  "generate_monthly_rent_details",
+  "rent_contract_details",
+  "resale_section",
+  "date",
+  "current_amount",
+  "mode_of_payment",
+  "contract_details",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "unit_number",
+   "fieldtype": "Data",
+   "label": "Unit Number",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "unit_status",
+   "fieldtype": "Select",
+   "label": "Unit Status",
+   "options": "Sold\nRent\nBlock\nAvailable\nReserved"
+  },
+  {
+   "fieldname": "column_break_rizml",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "unit",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.unit_status == 'Sold'\n",
+   "fieldname": "contract_date",
+   "fieldtype": "Date",
+   "label": "Contract date"
+  },
+  {
+   "depends_on": "eval:doc.unit_status == 'Sold'",
+   "fieldname": "maintenance_date",
+   "fieldtype": "Date",
+   "label": "Maintenance Date"
+  },
+  {
+   "depends_on": "eval:doc.unit_status == 'Reserved'\n",
+   "fieldname": "reserve_date",
+   "fieldtype": "Date",
+   "label": "Reserve Date"
+  },
+  {
+   "depends_on": "eval:doc.unit_status == 'Sold' || doc.unit_status == 'Reserved'\n",
+   "fieldname": "customer_link",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "block",
+   "fieldtype": "Link",
+   "label": "Block",
+   "options": "Block"
+  },
+  {
+   "fieldname": "floor",
+   "fieldtype": "Link",
+   "label": "Floor",
+   "options": "Floor"
+  },
+  {
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center"
+  },
+  {
+   "depends_on": "eval:doc.unit_status == 'Sold' || doc.unit_status == 'Reserved'\n",
+   "fieldname": "delivery_date",
+   "fieldtype": "Date",
+   "label": "Delivery Date"
+  },
+  {
+   "fieldname": "features_section",
+   "fieldtype": "Section Break",
+   "label": "Features"
+  },
+  {
+   "fieldname": "unit_area",
+   "fieldtype": "Float",
+   "label": "Unit Area (m\u00b2)"
+  },
+  {
+   "fieldname": "room",
+   "fieldtype": "Int",
+   "label": "Room"
+  },
+  {
+   "fieldname": "bathroom",
+   "fieldtype": "Int",
+   "label": "Bathroom"
+  },
+  {
+   "fieldname": "facing",
+   "fieldtype": "Select",
+   "label": "Facing",
+   "options": "North\nSouth\nEast\nWest"
+  },
+  {
+   "fieldname": "column_break_n4hfn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "unit_case",
+   "fieldtype": "Link",
+   "label": "Unit Case",
+   "options": "Unit Case"
+  },
+  {
+   "fieldname": "stage_number",
+   "fieldtype": "Link",
+   "label": "Stage number",
+   "options": "Stage number"
+  },
+  {
+   "default": "0",
+   "fieldname": "has_roof",
+   "fieldtype": "Check",
+   "label": "Has Roof "
+  },
+  {
+   "default": "0",
+   "fieldname": "has_garden",
+   "fieldtype": "Check",
+   "label": "Has Garden"
+  },
+  {
+   "fieldname": "unit_construction_section",
+   "fieldtype": "Section Break",
+   "label": "Unit Construction "
+  },
+  {
+   "default": "0",
+   "fieldname": "fully_finished",
+   "fieldtype": "Check",
+   "label": "Fully finished"
+  },
+  {
+   "default": "0",
+   "fieldname": "semi_finished",
+   "fieldtype": "Check",
+   "label": "Semi Finished"
+  },
+  {
+   "fieldname": "pricing_section",
+   "fieldtype": "Section Break",
+   "label": "Pricing"
+  },
+  {
+   "fieldname": "unit_price",
+   "fieldtype": "Currency",
+   "label": "Unit Price"
+  },
+  {
+   "fieldname": "maintenance_price",
+   "fieldtype": "Currency",
+   "label": "Maintenance Price"
+  },
+  {
+   "fieldname": "column_break_vjyk2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.unit_status == 'Sold' || doc.unit_status == 'Reserved'\n",
+   "fieldname": "resale_section",
+   "fieldtype": "Section Break",
+   "label": "Resale "
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date "
+  },
+  {
+   "fieldname": "current_amount",
+   "fieldtype": "Currency",
+   "label": "Current Amount"
+  },
+  {
+   "depends_on": "eval:doc.unit_status == 'Sold' || doc.unit_status == 'Reserved'\n",
+   "fieldname": "contract_details",
+   "fieldtype": "Table",
+   "label": "Contract details",
+   "options": "Contract details"
+  },
+  {
+   "fieldname": "mode_of_payment",
+   "fieldtype": "Link",
+   "label": "Mode of Payment",
+   "options": "Mode of Payment"
+  },
+  {
+   "fieldname": "unit_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Unit Type ",
+   "options": "Residential\nCommercial",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "commercial_section_section",
+   "fieldtype": "Section Break",
+   "label": "Commercial Section"
+  },
+  {
+   "fieldname": "location_number",
+   "fieldtype": "Int",
+   "label": "Location Number "
+  },
+  {
+   "fieldname": "brand_name",
+   "fieldtype": "Link",
+   "label": "Brand Name",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "unit_sqm",
+   "fieldtype": "Int",
+   "label": "Unit SQM"
+  },
+  {
+   "fieldname": "occupancy",
+   "fieldtype": "Select",
+   "label": "Occupancy",
+   "options": "Opened\nFit out\nVacant"
+  },
+  {
+   "fieldname": "column_break_28",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.unit_status == \"Rent\";",
+   "fieldname": "rent_contract_details_section",
+   "fieldtype": "Section Break",
+   "hide_border": 1,
+   "label": "Rent Contract Details"
+  },
+  {
+   "fieldname": "rent_contract_start_date",
+   "fieldtype": "Date",
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "rent_contract_duration",
+   "fieldtype": "Int",
+   "label": "Duration in Months"
+  },
+  {
+   "fieldname": "rent_contract_end_date",
+   "fieldtype": "Date",
+   "label": "End Date",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_abav",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "monthly_rent_amount",
+   "fieldtype": "Currency",
+   "label": "Monthly Rent Amount"
+  },
+  {
+   "fieldname": "rent_contract_increase_percent",
+   "fieldtype": "Percent",
+   "label": "Yearly Increase Percentage"
+  },
+  {
+   "depends_on": "eval:doc.unit_status == \"Rent\";",
+   "fieldname": "section_break_ffvb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.docstatus === 0;",
+   "fieldname": "generate_monthly_rent_details",
+   "fieldtype": "Button",
+   "label": "Generate Monthly Rent Details"
+  },
+  {
+   "fieldname": "rent_contract_details",
+   "fieldtype": "Table",
+   "label": "Rent Contract Details",
+   "options": "Unit Rent Detail"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_revenue_share",
+   "fieldtype": "Check",
+   "label": "Is Revenue Share"
+  },
+  {
+   "depends_on": "is_revenue_share",
+   "fieldname": "revenue_percent",
+   "fieldtype": "Percent",
+   "label": "Revenue Share Percentage"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-01-17 16:19:34.903002",
+ "modified_by": "Administrator",
+ "module": "Frontline Elsalem",
+ "name": "unit",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "track_seen": 1,
+ "track_views": 1
+}
