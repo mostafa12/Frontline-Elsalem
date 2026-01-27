@@ -241,6 +241,7 @@ def generate_rent_transactions(company, brand_name, rowname, mode_of_payment=Non
         invoice = frappe.new_doc("Sales Invoice")
         invoice.customer = brand_name
         invoice.company = company
+        invoice.set_posting_time = 1
         invoice.posting_date = row.rent_date
         invoice.posting_time = "00:00:00"
         invoice.due_date = row.rent_date
@@ -293,6 +294,7 @@ def generate_revenue_share_transactions(company, brand_name, rowname, mode_of_pa
         invoice = frappe.new_doc("Sales Invoice")
         invoice.customer = brand_name
         invoice.company = company
+        invoice.set_posting_time = 1
         invoice.posting_date = row.revenue_share_date
         invoice.posting_time = "00:00:00"
         invoice.due_date = row.revenue_share_date

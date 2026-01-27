@@ -5,6 +5,7 @@ from frappe.utils import flt
 
 def on_submit(doc, method):
     update_unit_rent_details(doc, update=True)
+    update_residential_unit_payment(doc)
 
 def before_cancel(doc, method):
     doc.ignore_linked_doctypes = (  
@@ -23,6 +24,18 @@ def before_cancel(doc, method):
     )
     update_unit_rent_details(doc, update=False)
     # unlink_unit_rent_details(doc, method)
+
+
+def update_residential_unit_payment(doc):
+    if doc.residential_unit_payment:
+        unit = frappe.get_doc("unit", doc.unit)
+        for row in unit.get("contract_details"):
+            if row.paymenttype == doc.unit_payment_type and flt(row.paid) == 0:
+                row.db_set("paid", doc.paid_amount)
+                row.db_set("paymentmethod", doc.mode_of_payment)
+                row.db_set("paymentdate", doc.posting_date)
+                row.db_set("remaining", flt(row.installments) - flt(doc.paid_amount))
+                break
 
 
 def validate_unit_paid_amounts(doc, method):
@@ -71,3 +84,52 @@ def unlink_unit_rent_details(doc, method):
     except Exception as e:
         frappe.log_error(f"Error unlinking revenue share details: {str(e)}")
         frappe.throw(f"Error unlinking revenue share details: {str(e)}")
+
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_payment_type(doctype, txt, searchfield, start, page_len, filters):
+    """Get payment_type from Contract details child table filtered by unit where paid == 0"""
+    if not filters or not filters.get("unit"):
+        return []
+    
+    unit = filters.get("unit")
+    
+    # Build query conditions
+    conditions = {
+        "parent": unit,
+        "parenttype": "unit",
+        "parentfield": "contract_details",
+        "paid": 0
+    }
+    
+    # Add text search if provided
+    if txt:
+        conditions["paymenttype"] = ("like", f"%{txt}%")
+    
+    # Get distinct payment types using SQL for better performance
+    query = """
+        SELECT DISTINCT paymenttype
+        FROM `tabContract details`
+        WHERE parent = %(unit)s
+        AND parenttype = 'unit'
+        AND parentfield = 'contract_details'
+        AND paid = 0
+        AND paymenttype IS NOT NULL
+    """
+    
+    params = {"unit": unit}
+    
+    if txt:
+        query += " AND paymenttype LIKE %(txt)s"
+        params["txt"] = f"%{txt}%"
+    
+    query += " ORDER BY paymenttype LIMIT %(limit)s OFFSET %(offset)s"
+    params["limit"] = page_len
+    params["offset"] = start
+    
+    results = frappe.db.sql(query, params, as_dict=False)
+    
+    # Return as list of tuples: [(payment_type,), ...]
+    return results
