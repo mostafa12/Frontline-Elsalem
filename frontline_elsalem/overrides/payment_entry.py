@@ -30,11 +30,17 @@ def update_residential_unit_payment(doc):
     if doc.residential_unit_payment:
         unit = frappe.get_doc("unit", doc.unit)
         for row in unit.get("contract_details"):
-            if row.paymenttype == doc.unit_payment_type and flt(row.paid) == 0:
-                row.db_set("paid", doc.paid_amount)
+            if row.paymenttype == doc.unit_payment_type:
+                paid_amount = row.paid + doc.paid_amount
+                remaining_amount = flt(row.installments) - flt(paid_amount)
+                
+                row.db_set("paid", paid_amount)
+                row.db_set("remaining", remaining_amount)
                 row.db_set("paymentmethod", doc.mode_of_payment)
                 row.db_set("paymentdate", doc.posting_date)
-                row.db_set("remaining", flt(row.installments) - flt(doc.paid_amount))
+
+                if doc.custom_check_status:
+                    row.db_set("checkstatus1", doc.custom_check_status)
                 break
 
 
@@ -96,18 +102,6 @@ def get_payment_type(doctype, txt, searchfield, start, page_len, filters):
     
     unit = filters.get("unit")
     
-    # Build query conditions
-    conditions = {
-        "parent": unit,
-        "parenttype": "unit",
-        "parentfield": "contract_details",
-        "paid": 0
-    }
-    
-    # Add text search if provided
-    if txt:
-        conditions["paymenttype"] = ("like", f"%{txt}%")
-    
     # Get distinct payment types using SQL for better performance
     query = """
         SELECT DISTINCT paymenttype
@@ -115,7 +109,7 @@ def get_payment_type(doctype, txt, searchfield, start, page_len, filters):
         WHERE parent = %(unit)s
         AND parenttype = 'unit'
         AND parentfield = 'contract_details'
-        AND paid = 0
+        AND (paid = 0 OR checkstatus1 = 'محصل جزئى')
         AND paymenttype IS NOT NULL
     """
     
