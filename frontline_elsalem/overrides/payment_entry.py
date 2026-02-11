@@ -5,7 +5,7 @@ from frappe.utils import flt
 
 def on_submit(doc, method):
     update_unit_rent_details(doc, update=True)
-    update_residential_unit_payment(doc)
+    add_residential_unit_payment(doc)
 
 def before_cancel(doc, method):
     doc.ignore_linked_doctypes = (  
@@ -23,25 +23,50 @@ def before_cancel(doc, method):
         "Unit Rent Detail"
     )
     update_unit_rent_details(doc, update=False)
+    reverse_residential_unit_payment(doc)
     # unlink_unit_rent_details(doc, method)
 
 
-def update_residential_unit_payment(doc):
-    if doc.residential_unit_payment:
+def add_residential_unit_payment(doc):
+    """Update unit contract_details with payment on submit."""
+    if doc.residential_unit_payment and doc.unit and doc.unit_payment_type:
         unit = frappe.get_doc("unit", doc.unit)
         for row in unit.get("contract_details"):
             if row.paymenttype == doc.unit_payment_type:
-                paid_amount = row.paid + doc.paid_amount
+                paid_amount = flt(row.paid) + flt(doc.paid_amount)
                 remaining_amount = flt(row.installments) - flt(paid_amount)
-                
                 row.db_set("paid", paid_amount)
                 row.db_set("remaining", remaining_amount)
                 row.db_set("paymentmethod", doc.mode_of_payment)
                 row.db_set("paymentdate", doc.posting_date)
-
                 if doc.custom_check_status:
                     row.db_set("checkstatus1", doc.custom_check_status)
                 break
+
+
+def reverse_residential_unit_payment(doc):
+    """Reverse unit contract_details payment on cancel."""
+    if doc.residential_unit_payment and doc.unit and doc.unit_payment_type:
+        unit = frappe.get_doc("unit", doc.unit)
+        for row in unit.get("contract_details"):
+            if row.paymenttype == doc.unit_payment_type:
+                paid_amount = flt(row.paid) - flt(doc.paid_amount)
+                remaining_amount = flt(row.installments) - flt(paid_amount)
+                row.db_set("paid", max(0, paid_amount))
+                row.db_set("remaining", remaining_amount)
+                break
+
+
+def validate_residential_unit_payment(doc, method):
+    """Validate residential unit payment."""
+    if doc.residential_unit_payment and doc.unit and doc.unit_payment_type:
+        unit = frappe.get_doc("unit", doc.unit)
+        for row in unit.get("contract_details"):
+            if row.paymenttype == doc.unit_payment_type:
+                if flt(row.paid) + flt(doc.paid_amount) > flt(row.installments):
+                    remaining_amount = flt(row.installments) - flt(row.paid)
+                    frappe.throw(_(f"Paid amount should be less than or equal to {remaining_amount}"))
+                    break
 
 
 def validate_unit_paid_amounts(doc, method):
@@ -109,7 +134,7 @@ def get_payment_type(doctype, txt, searchfield, start, page_len, filters):
         WHERE parent = %(unit)s
         AND parenttype = 'unit'
         AND parentfield = 'contract_details'
-        AND (paid = 0 OR checkstatus1 = 'محصل جزئى')
+        AND installments - paid > 0
         AND paymenttype IS NOT NULL
     """
     

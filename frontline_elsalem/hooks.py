@@ -104,7 +104,10 @@ doc_events = {
 	},
 	"Payment Entry": {
 		"on_trash": "frontline_elsalem.overrides.payment_entry.unlink_unit_rent_details",
-		"validate": "frontline_elsalem.overrides.payment_entry.validate_unit_paid_amounts",
+		"validate": [
+			"frontline_elsalem.overrides.payment_entry.validate_unit_paid_amounts",
+			"frontline_elsalem.overrides.payment_entry.validate_residential_unit_payment"
+		],
 		"on_submit": "frontline_elsalem.overrides.payment_entry.on_submit",
 		"before_cancel": "frontline_elsalem.overrides.payment_entry.before_cancel"
 	}
