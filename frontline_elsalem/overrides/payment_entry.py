@@ -35,13 +35,16 @@ def add_residential_unit_payment(doc):
             if row.paymenttype == doc.unit_payment_type:
                 paid_amount = flt(row.paid) + flt(doc.paid_amount)
                 remaining_amount = flt(row.installments) - flt(paid_amount)
-                row.db_set("paid", paid_amount)
-                row.db_set("remaining", remaining_amount)
-                row.db_set("paymentmethod", doc.mode_of_payment)
-                row.db_set("paymentdate", doc.posting_date)
+                row.paid = paid_amount
+                row.remaining = remaining_amount
+                row.paymentmethod = doc.mode_of_payment
+                row.paymentdate = doc.posting_date
                 if doc.custom_check_status:
-                    row.db_set("checkstatus1", doc.custom_check_status)
+                    row.checkstatus1 = doc.custom_check_status
                 break
+        
+        unit.calculate_total_installments()
+        unit.save()
 
 
 def reverse_residential_unit_payment(doc):
@@ -52,9 +55,12 @@ def reverse_residential_unit_payment(doc):
             if row.paymenttype == doc.unit_payment_type:
                 paid_amount = flt(row.paid) - flt(doc.paid_amount)
                 remaining_amount = flt(row.installments) - flt(paid_amount)
-                row.db_set("paid", max(0, paid_amount))
-                row.db_set("remaining", remaining_amount)
+                row.paid = paid_amount
+                row.remaining = remaining_amount
                 break
+        
+        unit.calculate_total_installments()
+        unit.save()
 
 
 def validate_residential_unit_payment(doc, method):

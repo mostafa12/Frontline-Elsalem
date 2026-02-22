@@ -23,6 +23,7 @@ class unit(Document):
 
         self.set_rent_contract_end_date()
         self.calculate_required_amount()
+        self.calculate_total_installments()
 
     def set_rent_contract_end_date(self):
         if self.unit_status == 'Rent' and self.rent_contract_start_date:
@@ -114,6 +115,18 @@ class unit(Document):
         
         # Return None if no matching account is found
         return None
+
+    def calculate_total_installments(self):
+        self.total_installments = 0
+        self.total_paid = 0
+        self.total_remaining = 0
+
+        for row in self.contract_details:
+            self.total_installments += row.installments
+            self.total_paid += row.paid
+            self.total_remaining += row.remaining
+        
+        self.custom_collection_rate = (self.total_paid / self.total_installments) * 100 if self.total_installments > 0 else 0
 
     @frappe.whitelist()
     def create_payment_entries_for_rent(self):
