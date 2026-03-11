@@ -247,6 +247,53 @@ def get_townteam_net_amount(from_date, to_date):
 
 
 @frappe.whitelist()
+def get_revenue_share_amount(brand, from_date, to_date):
+    """
+    Get the net_amount for a given brand and date range from Revenue Share doctype
+    brand: str
+    from_date: datetime
+    to_date: datetime
+    """
+
+    store_id = None
+    if brand in ['Asawer', 'Pino', 'Wadeda', 'Borest']:
+        if brand == 'Asawer':
+            store_id = 7
+        elif brand == 'Pino':
+            store_id = 5
+        elif brand == 'Wadeda':
+            store_id = 3
+        elif brand == 'Borest':
+            store_id = 1
+
+        brand = 'Bocrest/Wadeda/Pino/Asawer'
+    
+    if store_id:
+        revenue_share = frappe.db.sql(
+            """
+            SELECT 
+                SUM(net_amount) as total_net_amount
+            FROM `tabRevenue Share`
+            WHERE brand = %s AND store_id = %s AND transaction_date_and_time BETWEEN %s AND %s
+            """,
+            (brand, store_id, from_date, to_date),
+            as_dict=True
+        )
+    else:
+        revenue_share = frappe.db.sql(
+            """
+            SELECT 
+                SUM(net_amount) as total_net_amount
+            FROM `tabRevenue Share`
+            WHERE brand = %s AND transaction_date_and_time BETWEEN %s AND %s
+            """,
+            (brand, from_date, to_date),
+            as_dict=True
+        )
+    return revenue_share[0].total_net_amount if revenue_share and revenue_share[0].total_net_amount else 0
+
+
+@frappe.whitelist()
 def generate_rent_transactions(company, brand_name, rowname, mode_of_payment=None):
     # First create a sales invoice for the rent amount and ايجار محل تجارى item
     try:
@@ -323,6 +370,14 @@ def generate_revenue_share_transactions(company, brand_name, rowname, mode_of_pa
         invoice.insert(ignore_permissions=True)
         invoice.submit()
         row.db_set("revenue_share_sales_invoice", invoice.name)
+
+        # Update the revenue share details table
+        unit = frappe.get_doc("unit", row.parent)
+        for detail in unit.revenue_share_details:
+            if getdate(detail.start_date) <= getdate(row.revenue_share_date) <= getdate(detail.end_date):
+                detail.db_set("sales_invoice", invoice.name)
+                break
+        
         frappe.msgprint(f"Revenue share sales invoice created successfully: {invoice.name}", alert=True, indicator='green')
 
         payment_entry = get_payment_entry(dt="Sales Invoice", dn=invoice.name)

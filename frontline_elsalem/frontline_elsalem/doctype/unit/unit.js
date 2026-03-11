@@ -2,12 +2,27 @@
 // UNIT FORM SCRIPT (Enhanced & Fixed)
 // =======================
 
+const CUSTOMER_TO_BRAND = {
+	'شركة إية يو إف إيجيبت لصناعة وتوزيع المكسرات ( أبو عوف )': 'Abu Auf',
+	'أساور': 'Asawer',
+	'Pieno E Neno': 'Pino',
+	'وديدة': 'Wadeda',
+	'بوخارست بلاك': 'Borest',
+	'شركة نهضة مصر للسنيما - Renaissance Cinemas': 'Cinema',
+	'Dream 2000': 'Dream 2000',
+	'ديفاكتو': 'Defacto',
+	'تاي شوب': 'TieShop',
+	'New Active': 'Activ',
+	'تاون تیم': 'Town Team',
+	'تاون تيم': 'Town Team'  // alternate spelling (Arabic ي vs Persian ی)
+};
+
 frappe.ui.form.on('unit', {
-	refresh: function(frm) {
+	refresh: function (frm) {
 		calculate_totals(frm);
 
 		if (frm.doc.contract_details) {
-			frm.doc.contract_details.forEach(function(row) {
+			frm.doc.contract_details.forEach(function (row) {
 				calculate_remaining_only(frm, row.doctype, row.name);
 			});
 		}
@@ -29,11 +44,11 @@ frappe.ui.form.on('unit', {
 			$(frm.fields_dict.contract_details.wrapper).append($btn_container);
 			frm.fields_dict.contract_details.wrapper.download_upload_added = true;
 
-			$btn_container.find('#download_contract_details').on('click', function() {
+			$btn_container.find('#download_contract_details').on('click', function () {
 				download_contract_details(frm);
 			});
 
-			$btn_container.find('#upload_contract_details').on('click', function() {
+			$btn_container.find('#upload_contract_details').on('click', function () {
 				upload_contract_details(frm);
 			});
 		}
@@ -44,30 +59,203 @@ frappe.ui.form.on('unit', {
 		// 		create_payment_entries_for_rent(frm);
 		// 	});
 		// }
+
+		if (frm.is_new()) {
+			if (!frm.doc.r_sh_year) {
+				const year = frappe.defaults.get_user_default('fiscal_year') || frappe.datetime.now_date().substring(0, 4);
+				frm.set_value('r_sh_year', year);
+			}
+		}
 	},
 
-	unit_type: function(frm) {
+	unit_type: function (frm) {
 		toggle_fields_by_unit_type(frm);
 	},
 
-	contract_details_add: function(frm) {
+	contract_details_add: function (frm) {
 		calculate_totals(frm);
 	},
 
-	contract_details_remove: function(frm) {
+	contract_details_remove: function (frm) {
 		calculate_totals(frm);
 	},
 
-	rent_contract_start_date: function(frm) {
+	rent_contract_start_date: function (frm) {
 		calculate_rent_contract_end_date(frm);
 	},
 
-	rent_contract_duration: function(frm) {
+	rent_contract_duration: function (frm) {
 		calculate_rent_contract_end_date(frm);
 	},
 
-	generate_monthly_rent_details: function(frm) {
+	generate_monthly_rent_details: function (frm) {
 		generate_rent_details(frm);
+	},
+
+	r_sh_year: function (frm) {
+		frm.events.set_r_sh_start_end_dates(frm);
+	},
+
+	r_sh_month: function (frm) {
+		if (!frm.doc.r_sh_year) {
+			frappe.throw(__('Year is required'));
+		}
+
+		frm.events.set_r_sh_start_end_dates(frm);
+	},
+
+	set_r_sh_start_end_dates: function (frm) {
+		if (frm.doc.r_sh_month && frm.doc.r_sh_year) {
+			var month_names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+			var month_num = month_names.indexOf(frm.doc.r_sh_month) + 1;
+			if (month_num === 0) {
+				frappe.throw(__('Invalid month'));
+			}
+
+			var year = frm.doc.r_sh_year;
+			if (year.length > 4) {
+				// Fiscal Year is "2025-2026" -> use end year (2026) when user selects that year
+				year = year.split('-')[1];
+			}
+
+			var pad = function (n) { return String(n).padStart(2, '0'); };
+			var brand = (frm.doc.brand_name && CUSTOMER_TO_BRAND[frm.doc.brand_name]) ? CUSTOMER_TO_BRAND[frm.doc.brand_name] : (frm.doc.brand_name || '');
+			var is_al_salem_4_brand = ['Asawer', 'Pino', 'Wadeda', 'Borest'].includes(brand);
+
+			var r_sh_start_date, r_sh_end_date;
+			if (is_al_salem_4_brand) {
+				// AlSalem4Brand: 1st at 05:00 AM to next month's 1st at 04:59
+				r_sh_start_date = year + '-' + pad(month_num) + '-01 05:00:00';
+				var next_month_first = new Date(parseInt(year, 10), month_num, 1);
+				r_sh_end_date = next_month_first.getFullYear() + '-' + pad(next_month_first.getMonth() + 1) + '-01 04:59:59';
+			} else {
+				r_sh_start_date = year + '-' + pad(month_num) + '-01 00:00:00';
+				var last_day = new Date(parseInt(year, 10), month_num, 0);
+				r_sh_end_date = year + '-' + pad(month_num) + '-' + pad(last_day.getDate()) + ' 23:59:59';
+			}
+
+			frm.set_value('r_sh_start_date', r_sh_start_date);
+			frm.set_value('r_sh_end_date', r_sh_end_date);
+		} else {
+			frm.set_value('r_sh_start_date', '');
+			frm.set_value('r_sh_end_date', '');
+		}
+	},
+
+	calculate_reveue_share: function (frm) {
+		if (frm.doc.r_sh_month && frm.doc.r_sh_year) {
+			frm.events.set_r_sh_start_end_dates(frm);
+		}
+
+		if (!frm.doc.r_sh_start_date || !frm.doc.r_sh_end_date) {
+			frappe.throw(__('Start and End Date are required'));
+		}
+
+		let brand = '';
+		if (frm.doc.brand_name) {
+			const brand_key = String(frm.doc.brand_name);
+			if (CUSTOMER_TO_BRAND.hasOwnProperty(brand_key)) {
+				brand = CUSTOMER_TO_BRAND[brand_key];
+			} else {
+				brand = `'${brand_key}'`;
+			}
+		}
+
+		if (brand && frm.doc.r_sh_start_date && frm.doc.r_sh_end_date) {
+			frappe.call({
+				method: 'frontline_elsalem.frontline_elsalem.doctype.unit.unit.get_revenue_share_amount',
+				args: {
+					brand: brand,
+					from_date: frm.doc.r_sh_start_date,
+					to_date: frm.doc.r_sh_end_date
+				},
+				freeze: true,
+				freeze_message: 'Calculating revenue share...',
+				callback: function (r) {
+					if (r.message) {
+						let revenue_share_amount = flt(r.message);
+						let revenue_share_percent = frm.doc.revenue_percent || 0;
+						frm.set_value({
+							total_revenues: revenue_share_amount,
+							caluclated_revenue_share_amount: revenue_share_amount * (revenue_share_percent / 100)
+						}).then(() => {
+							frm.save();
+						});
+					} else {
+						frm.set_value({
+							total_revenues: 0,
+							caluclated_revenue_share_amount: 0
+						}).then(() => {
+							frm.save();
+						});
+					}
+				}
+			});
+		} else {
+			frappe.throw(__('Brand Name, Start Date and End Date are required'));
+		}
+	},
+
+	confirm_reveue_share: function (frm) {
+		if (flt(frm.doc.caluclated_revenue_share_amount, 2) == flt(frm.doc.provided_revenue_share, 2)
+			|| flt(frm.doc.caluclated_revenue_share_amount) == flt(frm.doc.provided_revenue_share)) {
+			frappe.confirm('Are you sure you want to confirm the revenue share?', function () {
+				var start_d = (frm.doc.r_sh_start_date || '').toString().substring(0, 10);
+				var end_d = (frm.doc.r_sh_end_date || '').toString().substring(0, 10);
+				$.each(frm.doc.rent_contract_details, function (index, row) {
+					var rent_d = (row.rent_date || '').toString().substring(0, 10);
+					if (rent_d && start_d && end_d && rent_d >= start_d && rent_d < end_d) {
+						if (row.revenue_share_sales_invoice) {
+							frappe.throw(__('Revenue Share Sales Invoice already exists for this rent date'));
+						} else {
+							frappe.model.set_value(row.doctype, row.name, 'revenue_share_amount', frm.doc.caluclated_revenue_share_amount);
+
+							// check if not exists in revenue_share_details table, create a new one and if exists, update the existing one
+							let month_label = frm.doc.r_sh_month;
+							let start_date = (frm.doc.r_sh_start_date || '').toString().substring(0, 10);
+							let end_date = (frm.doc.r_sh_end_date || '').toString().substring(0, 10);
+
+							if (start_date && !month_label) {
+								try {
+									let start_obj = frappe.datetime.str_to_obj(start_date);
+									month_label = start_obj.toLocaleString('default', {
+										month: 'long',
+										year: 'numeric'
+									});
+								} catch (e) {
+									month_label = start_date;
+								}
+							}
+
+							let existing_detail = (frm.doc.revenue_share_details || []).find(function (d) {
+								let d_start = (d.start_date || '').toString().substring(0, 10);
+								let d_end = (d.end_date || '').toString().substring(0, 10);
+								return d_start === start_date && d_end === end_date;
+							});
+
+							if (existing_detail) {
+								frappe.model.set_value(existing_detail.doctype, existing_detail.name, 'month', month_label);
+								frappe.model.set_value(existing_detail.doctype, existing_detail.name, 'total_revenues', frm.doc.total_revenues);
+								frappe.model.set_value(existing_detail.doctype, existing_detail.name, 'final_revenue_share_amount', frm.doc.caluclated_revenue_share_amount);
+							} else {
+								let child = frm.add_child('revenue_share_details');
+								frappe.model.set_value(child.doctype, child.name, 'month', month_label);
+								frappe.model.set_value(child.doctype, child.name, 'start_date', frm.doc.r_sh_start_date);
+								frappe.model.set_value(child.doctype, child.name, 'end_date', frm.doc.r_sh_end_date);
+								frappe.model.set_value(child.doctype, child.name, 'total_revenues', frm.doc.total_revenues);
+								frappe.model.set_value(child.doctype, child.name, 'final_revenue_share_amount', frm.doc.caluclated_revenue_share_amount);
+							}
+
+							frm.refresh_field('revenue_share_details');
+						}
+					}
+				});
+				frm.save();
+			});
+		} else {
+			frappe.throw(__('Calculated Revenue Share Amount should equal Provided Revenue Share Amount'));
+		}
+
 	}
 });
 
@@ -87,7 +275,7 @@ function generate_rent_details(frm) {
 		doc: frm.doc,
 		freeze: true,
 		freeze_message: 'Generating rent details...',
-		callback: function(r) {
+		callback: function (r) {
 			frm.refresh_field("rent_contract_details");
 			frm.dirty = true;
 		}
@@ -97,13 +285,13 @@ function generate_rent_details(frm) {
 function create_payment_entries_for_rent(frm) {
 	frappe.confirm(
 		'This will create payment entries for all rows. Continue?',
-		function() {
+		function () {
 			frappe.call({
 				method: 'create_payment_entries_for_rent',
 				doc: frm.doc,
 				freeze: true,
 				freeze_message: 'Creating payment entries...',
-				callback: function() {
+				callback: function () {
 					frm.reload_doc();
 				}
 			});
@@ -113,17 +301,17 @@ function create_payment_entries_for_rent(frm) {
 
 
 frappe.ui.form.on('Unit Rent Detail', {
-	revenue_share_amount: function(frm, cdt, cdn) {
+	revenue_share_amount: function (frm, cdt, cdn) {
 		calculate_required_amount(frm, cdt, cdn);
 	},
-	monthly_rent_amount: function(frm, cdt, cdn) {
+	monthly_rent_amount: function (frm, cdt, cdn) {
 		calculate_required_amount(frm, cdt, cdn);
 	},
 
-	payment_type: function(frm, cdt, cdn) {
+	payment_type: function (frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
 		if (row.payment_type) {
-			$.each(locals[cdt], function(index, d) {
+			$.each(locals[cdt], function (index, d) {
 				if (!d.payment_type) {
 					frappe.model.set_value(d.doctype, d.name, 'payment_type', row.payment_type);
 				}
@@ -131,7 +319,7 @@ frappe.ui.form.on('Unit Rent Detail', {
 		}
 	},
 
-	caculate_revenue_share_amount: function(frm, cdt, cdn) {
+	caculate_revenue_share_amount: function (frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
 		frappe.call({
 			method: 'frontline_elsalem.frontline_elsalem.doctype.unit.unit.get_townteam_net_amount',
@@ -139,7 +327,7 @@ frappe.ui.form.on('Unit Rent Detail', {
 				from_date: row.rent_date,
 				to_date: row.revenue_share_date
 			},
-			callback: function(r) {
+			callback: function (r) {
 				if (r.message) {
 					let townteam_amount = flt(r.message);
 					let revenue_share_amount = townteam_amount * (frm.doc.revenue_percent / 100);
@@ -149,15 +337,11 @@ frappe.ui.form.on('Unit Rent Detail', {
 		});
 	},
 
-	generate_rent_transactions: function(frm, cdt, cdn) {
+	generate_rent_transactions: function (frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
 		if (frm.is_dirty()) {
 			frappe.throw(__('You have unsaved changes. Please save the form first'));
 		};
-
-		if (frm.doc.docstatus != 1) {
-			frappe.throw(__('You must submit the form first'));
-		}
 
 		frappe.call({
 			method: 'frontline_elsalem.frontline_elsalem.doctype.unit.unit.generate_rent_transactions',
@@ -169,21 +353,17 @@ frappe.ui.form.on('Unit Rent Detail', {
 			},
 			freeze: true,
 			freeze_message: 'Generating rent transactions...',
-			callback: function() {
+			callback: function () {
 				frm.reload_doc();
 			}
 		});
 	},
 
-	generate_revenue_share_transactions: function(frm, cdt, cdn) {
+	generate_revenue_share_transactions: function (frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
 		if (frm.is_dirty()) {
 			frappe.throw(__('You have unsaved changes. Please save the form first'));
 		};
-
-		if (frm.doc.docstatus != 1) {
-			frappe.throw(__('You must submit the form first'));
-		}
 
 		frappe.call({
 			method: 'frontline_elsalem.frontline_elsalem.doctype.unit.unit.generate_revenue_share_transactions',
@@ -195,7 +375,7 @@ frappe.ui.form.on('Unit Rent Detail', {
 			},
 			freeze: true,
 			freeze_message: 'Generating revenue share transactions...',
-			callback: function() {
+			callback: function () {
 				frm.reload_doc();
 			}
 		});
@@ -207,12 +387,12 @@ function calculate_required_amount(frm, cdt, cdn) {
 	let row = locals[cdt][cdn];
 	let revenue_share_amount = flt(row.revenue_share_amount) || 0;
 	let monthly_rent_amount = flt(row.monthly_rent_amount) || 0;
-	
+
 	let required_amount = 0;
 	if (revenue_share_amount > monthly_rent_amount) {
 		required_amount = revenue_share_amount - monthly_rent_amount;
 	}
-	
+
 	frappe.model.set_value(cdt, cdn, 'required_amount', required_amount);
 }
 
@@ -221,23 +401,23 @@ function calculate_required_amount(frm, cdt, cdn) {
 // CONTRACT DETAILS CHILD TABLE EVENTS
 // ==========================
 frappe.ui.form.on('Contract details', {
-	installments: function(frm, cdt, cdn) {
+	installments: function (frm, cdt, cdn) {
 		calculate_remaining_only(frm, cdt, cdn);
 		calculate_totals(frm);
 	},
-	paid: function(frm, cdt, cdn) {
+	paid: function (frm, cdt, cdn) {
 		calculate_remaining_only(frm, cdt, cdn);
 		calculate_totals(frm);
 	},
-	part_paid: function(frm, cdt, cdn) {
+	part_paid: function (frm, cdt, cdn) {
 		calculate_remaining_only(frm, cdt, cdn);
 		calculate_totals(frm);
 	},
-	bounced_checks: function(frm, cdt, cdn) {
+	bounced_checks: function (frm, cdt, cdn) {
 		check_remaining_vs_bounced(frm, cdt, cdn, false);
 	},
 
-	checkstatus1: function(frm, cdt, cdn) {
+	checkstatus1: function (frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
 
 		// محصل فورى
@@ -263,7 +443,7 @@ frappe.ui.form.on('Contract details', {
 					reqd: true,
 					description: `القسط الكلي: ${installments} | المدفوع حالياً: ${current_paid} | المتبقي: ${current_remaining}`
 				}
-			], function(values) {
+			], function (values) {
 				let partial = flt(values.partial_payment);
 
 				// التحقق من أن المبلغ الجزئي لا يتجاوز المتبقي
@@ -313,7 +493,7 @@ frappe.ui.form.on('Contract details', {
 					fieldtype: 'Float',
 					reqd: true
 				}
-			], function(values) {
+			], function (values) {
 				let current_paid = flt(row.paid);
 				let bounced_amount = flt(values.bounced_amount);
 				let new_paid = current_paid - bounced_amount;
@@ -341,9 +521,9 @@ function download_contract_details(frm) {
 	}
 
 	let headers = [
-		"paymenttype","installments","paid","part_paid","remaining",
-		"bounced_checks","checkstatus1","paymentmethod","bank","branch",
-		"checknumber","duedate","paymentdate"
+		"paymenttype", "installments", "paid", "part_paid", "remaining",
+		"bounced_checks", "checkstatus1", "paymentmethod", "bank", "branch",
+		"checknumber", "duedate", "paymentdate"
 	];
 	let csv = headers.join(",") + "\n";
 
@@ -361,11 +541,11 @@ function download_contract_details(frm) {
 
 function upload_contract_details(frm) {
 	let $input = $('<input type="file" accept=".csv">');
-	$input.on('change', function(e) {
+	$input.on('change', function (e) {
 		let file = e.target.files[0];
 		let reader = new FileReader();
 
-		reader.onload = function(event) {
+		reader.onload = function (event) {
 			let csv = event.target.result;
 			let lines = csv.split("\n").filter(l => l.trim() !== "");
 			let headers = lines[0].split(",");

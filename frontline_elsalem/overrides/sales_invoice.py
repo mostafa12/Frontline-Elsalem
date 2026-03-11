@@ -32,6 +32,11 @@ def unlink_unit_rent_details(doc, method):
         revenue_share_details = frappe.db.get_all("Unit Rent Detail", filters={"revenue_share_sales_invoice": sales_invoice})
         for revenue_share_detail in revenue_share_details:
             frappe.db.set_value("Unit Rent Detail", revenue_share_detail.name, "revenue_share_sales_invoice", None)
+        frappe.msgprint(f"Unit unlinked successfully for sales invoice: {sales_invoice}", alert=True, indicator='green')
+
+        unit_revenue_share_details = frappe.db.get_all("Unit Revenue Share Detail", filters={"sales_invoice": sales_invoice})
+        for revenue_share_detail in unit_revenue_share_details:
+            frappe.db.set_value("Unit Revenue Share Detail", revenue_share_detail.name, "sales_invoice", None)
         frappe.msgprint(f"Revenue share details unlinked successfully for sales invoice: {sales_invoice}", alert=True, indicator='green')
 
     except Exception as e:

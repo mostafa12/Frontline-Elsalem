@@ -100,7 +100,11 @@ doctype_js = {
 
 doc_events = {
 	"Sales Invoice": {
-		"before_cancel": "frontline_elsalem.overrides.sales_invoice.before_cancel"
+		"before_cancel": [
+			"frontline_elsalem.overrides.sales_invoice.before_cancel",
+			"frontline_elsalem.overrides.sales_invoice.unlink_unit_rent_details"
+		],
+		"on_trash": "frontline_elsalem.overrides.sales_invoice.unlink_unit_rent_details"
 	},
 	"Payment Entry": {
 		"on_trash": "frontline_elsalem.overrides.payment_entry.unlink_unit_rent_details",
@@ -116,11 +120,11 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-scheduler_events = {
-	"daily": [
-		"frontline_elsalem.frontline_elsalem.doctype.unit.unit.update_revenue_share_amount"
-	]
-}
+# scheduler_events = {
+# 	"daily": [
+# 		"frontline_elsalem.frontline_elsalem.doctype.unit.unit.update_revenue_share_amount"
+# 	]
+# }
 
 # Testing
 # -------
