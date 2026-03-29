@@ -122,11 +122,11 @@ class unit(Document):
         self.total_remaining = 0
 
         for row in self.contract_details:
-            self.total_installments += row.installments
-            self.total_paid += row.paid
-            self.total_remaining += row.remaining
+            self.total_installments += flt(row.installments)
+            self.total_paid += flt(row.paid)
+            self.total_remaining += flt(row.remaining)
         
-        self.custom_collection_rate = (self.total_paid / self.total_installments) * 100 if self.total_installments > 0 else 0
+        self.custom_collection_rate = (flt(self.total_paid) / flt(self.total_installments)) * 100 if flt(self.total_installments) > 0 else 0
 
     @frappe.whitelist()
     def create_payment_entries_for_rent(self):
