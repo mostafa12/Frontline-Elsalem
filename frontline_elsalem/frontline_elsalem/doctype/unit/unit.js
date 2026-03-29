@@ -68,6 +68,10 @@ frappe.ui.form.on('unit', {
 		}
 	},
 
+	unit_status: function (frm) {
+		toggle_fields_by_unit_type(frm);
+	},
+
 	unit_type: function (frm) {
 		toggle_fields_by_unit_type(frm);
 	},
@@ -636,7 +640,11 @@ function toggle_fields_by_unit_type(frm) {
 		commercial_fields.forEach(field => frm.toggle_reqd(field, false));
 
 		frm.toggle_display('customer_link', true);
-		frm.toggle_reqd('customer_link', true);
+		if (in_list(["Sold", "Reserved"], frm.doc.unit_status)) {
+			frm.toggle_reqd('customer_link', true);
+		}else{
+			frm.toggle_reqd('customer_link', false);
+		}
 
 	} else if (frm.doc.unit_type === "Commercial") {
 		frm.toggle_display('commercial_section_section', true);
@@ -646,7 +654,7 @@ function toggle_fields_by_unit_type(frm) {
 		residential_fields.forEach(field => frm.toggle_reqd(field, false));
 
 		frm.toggle_display('customer_link', false);
-		frm.toggle_reqd('customer_link', false);
+		// frm.toggle_reqd('customer_link', false);
 
 	} else {
 		frappe.throw(__('Unit Type must be either "Residential" or "Commercial". Please select a valid option.'));
