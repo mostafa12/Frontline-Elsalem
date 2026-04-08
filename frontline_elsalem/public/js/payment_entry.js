@@ -28,7 +28,8 @@ frappe.ui.form.on('Payment Entry', {
 			"Unreconcile Payment Entries",
 			"Bank Transaction",
             "unit",
-            "Unit Rent Detail"
+            "Unit Rent Detail",
+			"Unit Maintenance Detail"
 		];
     },
 

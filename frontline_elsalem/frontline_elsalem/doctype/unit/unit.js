@@ -53,13 +53,6 @@ frappe.ui.form.on('unit', {
 			});
 		}
 
-		// Add custom button for creating payment entries
-		// if (frm.doc.unit_status == 'Rent' && frm.doc.rent_contract_details) {
-		// 	frm.add_custom_button('Create Payment Entries', function() {
-		// 		create_payment_entries_for_rent(frm);
-		// 	});
-		// }
-
 		if (frm.is_new()) {
 			if (!frm.doc.r_sh_year) {
 				const year = frappe.defaults.get_user_default('fiscal_year') || frappe.datetime.now_date().substring(0, 4);
@@ -284,24 +277,7 @@ function generate_rent_details(frm) {
 			frm.dirty = true;
 		}
 	});
-}
-
-function create_payment_entries_for_rent(frm) {
-	frappe.confirm(
-		'This will create payment entries for all rows. Continue?',
-		function () {
-			frappe.call({
-				method: 'create_payment_entries_for_rent',
-				doc: frm.doc,
-				freeze: true,
-				freeze_message: 'Creating payment entries...',
-				callback: function () {
-					frm.reload_doc();
-				}
-			});
-		}
-	);
-}
+};
 
 
 frappe.ui.form.on('Unit Rent Detail', {
@@ -512,6 +488,48 @@ frappe.ui.form.on('Contract details', {
 		}
 	}
 });
+
+
+frappe.ui.form.on('Unit Maintenance Detail', {
+	maintenance_amount: function (frm, cdt, cdn) {
+		calculate_total_maintenance_amount(frm, cdt, cdn);
+	},
+	water_amount: function (frm, cdt, cdn) {
+		calculate_total_maintenance_amount(frm, cdt, cdn);
+	},
+	penalty_amount: function (frm, cdt, cdn) {
+		calculate_total_maintenance_amount(frm, cdt, cdn);
+	},
+
+	generate_maintenance_transactions: function (frm, cdt, cdn) {
+		let row = locals[cdt][cdn];
+		if (frm.is_dirty()) {
+			frappe.throw(__('You have unsaved changes. Please save the form first'));
+		}
+
+		frappe.call({
+			method: 'frontline_elsalem.frontline_elsalem.doctype.unit.unit.generate_maintenance_transactions',
+			args: {
+				company: frm.doc.company,
+				brand_name: frm.doc.brand_name,
+				rowname: row.name,
+				mode_of_payment: frm.doc.mode_of_payment
+			},
+			freeze: true,
+			freeze_message: __('Generating maintenance transactions...'),
+			callback: function () {
+				frm.reload_doc();
+			}
+		});
+	},
+});
+
+function calculate_total_maintenance_amount(frm, cdt, cdn) {
+	let row = locals[cdt][cdn];
+	let total_maintenance_amount = 0;
+	total_maintenance_amount = flt(row.maintenance_amount) + flt(row.water_amount) + flt(row.penalty_amount);
+	frappe.model.set_value(cdt, cdn, 'total', total_maintenance_amount);
+}
 
 // ==========================
 // DOWNLOAD / UPLOAD FUNCTIONS

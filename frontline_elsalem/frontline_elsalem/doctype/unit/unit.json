@@ -78,6 +78,8 @@
   "confirm_reveue_share",
   "section_break_ccez",
   "revenue_share_details",
+  "maintenance_tab",
+  "maintenance_details",
   "connections_tab"
  ],
  "fields": [
@@ -489,12 +491,23 @@
    "no_copy": 1,
    "options": "Unit Revenue Share Detail",
    "read_only": 1
+  },
+  {
+   "fieldname": "maintenance_tab",
+   "fieldtype": "Tab Break",
+   "label": "Maintenance"
+  },
+  {
+   "fieldname": "maintenance_details",
+   "fieldtype": "Table",
+   "label": "Maintenance Details",
+   "options": "Unit Maintenance Detail"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-11 15:00:53.106515",
+ "modified": "2026-04-08 17:29:25.082662",
  "modified_by": "Administrator",
  "module": "Frontline Elsalem",
  "name": "unit",

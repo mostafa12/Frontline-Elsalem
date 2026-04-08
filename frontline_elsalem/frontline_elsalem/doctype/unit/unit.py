@@ -24,6 +24,8 @@ class unit(Document):
         self.set_rent_contract_end_date()
         self.calculate_required_amount()
         self.calculate_total_installments()
+        self.calculate_total_maintenance_amount()
+        self.validate_duplicate_maintenance_dates()
 
     def set_rent_contract_end_date(self):
         if self.unit_status == 'Rent' and self.rent_contract_start_date:
@@ -128,106 +130,37 @@ class unit(Document):
         
         self.custom_collection_rate = (flt(self.total_paid) / flt(self.total_installments)) * 100 if flt(self.total_installments) > 0 else 0
 
-    @frappe.whitelist()
-    def create_payment_entries_for_rent(self):
-        """Create payment entries for rent contract details with required_amount > 0"""
-        if self.unit_status != 'Rent':
-            frappe.throw("Unit status must be 'Rent' to create payment entries")
-        
-        if not self.company:
-            frappe.throw("Please set Company first")
-        
-        if not self.customer_link:
-            frappe.throw("Please set Customer first")
-        
-        # Get rows that need payment entries
-        rows_to_process = [
-            row for row in self.rent_contract_details 
-            if flt(row.required_amount) > 0 and not row.payment_entry
-        ]
-        
-        if not rows_to_process:
-            frappe.msgprint("No rows found with required amount > 0 and no payment entry")
-            return
-        
-        created_entries = []
-        
-        for idx, row in enumerate(rows_to_process, 1):
-            try:
-                # Get party account
-                party_account = get_party_account("Customer", self.customer_link, self.company)
-                party_account_currency = get_account_currency(party_account)
-                
-                # Get default bank/cash account from mode of payment if available
-                bank_account = None
-                if self.mode_of_payment:
-                    bank_account = self.get_default_account(self.mode_of_payment, self.company)
-                
-                if not bank_account:
-                    # Get default company bank account
-                    bank_account = frappe.db.get_value(
-                        "Account",
-                        {"account_type": "Bank", "is_group": 0, "company": self.company},
-                        "name"
-                    )
-                
-                if not bank_account:
-                    frappe.throw(f"Please set up a bank account for company {self.company}")
-                
-                bank_account_currency = get_account_currency(bank_account)
-                
-                # Check if bank account type is "Bank" (requires reference_no and reference_date)
-                bank_account_type = frappe.db.get_value("Account", bank_account, "account_type")
-                reference_date = nowdate()
-                
-                # Create payment entry
-                pe = frappe.new_doc("Payment Entry")
-                pe.payment_type = "Receive"  # Receiving rent from customer
-                pe.company = self.company
-                pe.cost_center = self.cost_center
-                pe.posting_date = nowdate()
-                pe.reference_date = reference_date
-                pe.party_type = "Customer"
-                pe.party = self.customer_link
-                pe.paid_from = party_account
-                pe.paid_to = bank_account
-                pe.paid_from_account_currency = party_account_currency
-                pe.paid_to_account_currency = bank_account_currency
-                pe.paid_amount = flt(row.required_amount)
-                pe.received_amount = flt(row.required_amount)
-                pe.mode_of_payment = self.mode_of_payment
-                pe.remarks = f"Rent payment for Unit {self.unit_number} - {row.payment_type or 'Monthly'}"
-                
-                if bank_account_type == "Bank":
-                    payment_type_short = (row.payment_type or 'MONTHLY')[:4].upper()
-                    pe.reference_no = f"RENT-{self.unit_number}-{payment_type_short}-{idx:03d}"
-                
-                pe.setup_party_account_field()
-                
-                # Set missing values and validate
-                pe.set_missing_values()
-                pe.set_exchange_rate()
-                
-                # Save payment entry
-                pe.insert()
-                # pe.submit()
-                
-                # Update row with payment entry reference
-                row.db_set("payment_entry", pe.name)
-                row.db_set("paid_amount", flt(row.required_amount))
-                created_entries.append(pe.name)
-                
-            except Exception as e:
-                frappe.log_error(f"Error creating payment entry for row: {str(e)}")
-                frappe.throw(f"Error creating payment entry: {str(e)}")
-        
-        # Save the unit document with updated payment entry references
-        self.save()
-        
-        if created_entries:
-            frappe.msgprint(f"Created {len(created_entries)} payment entry/entries: {', '.join(created_entries)}")
-        
-        return created_entries
+    def calculate_total_maintenance_amount(self):
+        for row in self.maintenance_details:
+            self.total = flt(row.maintenance_amount) + flt(row.water_amount) + flt(row.penalty_amount)
+
+            if self.total == 0 or self.total is None:
+                frappe.throw(_(f"Total maintenance amount cannot be zero for row {row.idx}"))
+            elif self.total < 0:
+                frappe.throw(_(f"Total maintenance amount cannot be negative for row {row.idx}"))
+
+    def validate_duplicate_maintenance_dates(self):
+        seen_months = set()
+        duplicate_months = []
+        for row in self.maintenance_details:
+            if not row.date:
+                continue
+            d = getdate(row.date)
+            key = (d.year, d.month)
+            if key in seen_months:
+                duplicate_months.append(key)
+            else:
+                seen_months.add(key)
+
+        if duplicate_months:
+            months_str = ", ".join(
+                f"{y:04d}-{m:02d}" for y, m in sorted(set(duplicate_months))
+            )
+            frappe.throw(
+                _(
+                    "Maintenance dates cannot be duplicate for the following months: {0}"
+                ).format(months_str)
+            )
 
 
 @frappe.whitelist()
@@ -398,6 +331,92 @@ def generate_revenue_share_transactions(company, brand_name, rowname, mode_of_pa
     except Exception as e:
         frappe.log_error(f"Error generating revenue share transactions: {str(e)}")
         frappe.throw(f"Error generating revenue share transactions: {str(e)}")
+
+
+maintenance_items = [
+    {
+        "item_code": "صيانة محل تجارى",
+        "rate_field": "maintenance_amount",
+    },
+    {
+        "item_code": "مياه محلات",
+        "rate_field": "water_amount",
+    },
+    {
+        "item_code": "SER-10186",
+        "rate_field": "penalty_amount",
+    }
+]
+
+
+@frappe.whitelist()
+def generate_maintenance_transactions(company, brand_name, rowname, mode_of_payment=None):
+    try:
+        row = frappe.get_doc("Unit Maintenance Detail", rowname)
+        if row.sales_invoice or row.payment_entry:
+            frappe.throw(_("Sales Invoice or Payment Entry already exists for this maintenance row"))
+
+        if not brand_name:
+            frappe.throw(_("Brand Name (customer) is required"))
+
+        invoice = frappe.new_doc("Sales Invoice")
+        invoice.customer = brand_name
+        invoice.company = company
+        invoice.set_posting_time = 1
+        invoice.posting_date = row.date
+        invoice.posting_time = "00:00:00"
+        invoice.due_date = row.date
+        invoice.update_stock = 0
+        invoice.debit_to = get_account_paid_from()
+
+        grand_total = 0
+        for spec in maintenance_items:
+            rate = flt(getattr(row, spec["rate_field"], None) or 0)
+            if rate <= 0:
+                continue
+            grand_total += rate
+            item_name = frappe.db.get_value("Item", spec["item_code"], "item_name") or spec["item_code"]
+            invoice.append(
+                "items",
+                {
+                    "item_code": spec["item_code"],
+                    "item_name": item_name,
+                    "qty": 1,
+                    "rate": rate,
+                },
+            )
+
+        if grand_total <= 0:
+            frappe.throw(
+                _("Enter at least one non-zero maintenance, water, or penalty amount before generating transactions.")
+            )
+
+        invoice.set_missing_values()
+        invoice.insert(ignore_permissions=True)
+        invoice.submit()
+        row.db_set("sales_invoice", invoice.name)
+        frappe.msgprint(
+            _("Sales invoice created successfully: {0}").format(invoice.name), alert=True, indicator="green"
+        )
+
+        payment_entry = get_payment_entry(dt="Sales Invoice", dn=invoice.name)
+        payment_entry.posting_date = row.date
+        payment_entry.paid_from = get_account_paid_from()
+        payment_entry.paid_amount = grand_total
+        payment_entry.reference_no = invoice.name
+        payment_entry.reference_date = invoice.posting_date
+        payment_entry.set_missing_values()
+        payment_entry.set_exchange_rate()
+        payment_entry.flags.ignore_validate = True
+        payment_entry.insert(ignore_permissions=True, ignore_mandatory=True)
+
+        row.db_set("payment_entry", payment_entry.name)
+        frappe.msgprint(
+            _("Payment entry created successfully: {0}").format(payment_entry.name), alert=True, indicator="green"
+        )
+    except Exception as e:
+        frappe.log_error(f"Error generating maintenance transactions: {str(e)}")
+        frappe.throw(f"Error generating maintenance transactions: {str(e)}")
 
 
 def get_account_paid_from():

@@ -16,7 +16,8 @@ def before_cancel(doc, method):
 			"Serial and Batch Bundle",
 			"Tax Withholding Entry",
             "unit",
-            "Unit Rent Detail"
+            "Unit Rent Detail",
+            "Unit Maintenance Detail"
 		)
 
 
@@ -42,3 +43,16 @@ def unlink_unit_rent_details(doc, method):
     except Exception as e:
         frappe.log_error(f"Error unlinking unit rent details: {str(e)}")
         frappe.throw(f"Error unlinking unit rent details: {str(e)}")
+
+
+@frappe.whitelist()
+def unlink_unit_maintenance_details(doc, method):
+    sales_invoice = doc.name
+    try:
+        maintenance_details = frappe.db.get_all("Unit Maintenance Detail", filters={"sales_invoice": sales_invoice})
+        for maintenance_detail in maintenance_details:
+            frappe.db.set_value("Unit Maintenance Detail", maintenance_detail.name, "sales_invoice", None)
+        frappe.msgprint(f"Unit maintenance unlinked successfully for sales invoice: {sales_invoice}", alert=True, indicator='green')
+    except Exception as e:
+        frappe.log_error(f"Error unlinking unit maintenance details: {str(e)}")
+        frappe.throw(f"Error unlinking unit maintenance details: {str(e)}")

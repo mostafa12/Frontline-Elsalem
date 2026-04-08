@@ -14,7 +14,8 @@ frappe.ui.form.on('Sales Invoice', {
             "Serial and Batch Bundle",
             "Bank Transaction",
             "unit",
-            "Unit Rent Detail"
+            "Unit Rent Detail",
+			"Unit Maintenance Detail"
         ];
     }
 });

@@ -102,12 +102,16 @@ doc_events = {
 	"Sales Invoice": {
 		"before_cancel": [
 			"frontline_elsalem.overrides.sales_invoice.before_cancel",
-			"frontline_elsalem.overrides.sales_invoice.unlink_unit_rent_details"
+			"frontline_elsalem.overrides.sales_invoice.unlink_unit_rent_details",
+			"frontline_elsalem.overrides.sales_invoice.unlink_unit_maintenance_details"
 		],
 		"on_trash": "frontline_elsalem.overrides.sales_invoice.unlink_unit_rent_details"
 	},
 	"Payment Entry": {
-		"on_trash": "frontline_elsalem.overrides.payment_entry.unlink_unit_rent_details",
+		"on_trash": [
+			"frontline_elsalem.overrides.payment_entry.unlink_unit_rent_details",
+			"frontline_elsalem.overrides.payment_entry.unlink_unit_maintenance_details"
+		],
 		"validate": [
 			"frontline_elsalem.overrides.payment_entry.validate_unit_paid_amounts",
 			"frontline_elsalem.overrides.payment_entry.validate_residential_unit_payment"

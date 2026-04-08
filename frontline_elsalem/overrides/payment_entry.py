@@ -20,10 +20,12 @@ def before_cancel(doc, method):
         "Unreconcile Payment Entries",  
         "Advance Payment Ledger Entry",  
         "unit",
-        "Unit Rent Detail"
+        "Unit Rent Detail",
+        "Unit Maintenance Detail"
     )
     update_unit_rent_details(doc, update=False)
     reverse_residential_unit_payment(doc)
+    unlink_unit_maintenance_details(doc, method)
     # unlink_unit_rent_details(doc, method)
 
 
@@ -99,6 +101,13 @@ def update_unit_rent_details(doc, update=True):
             frappe.db.set_value("Unit Rent Detail", revenue_share_detail, "revenue_share_paid_amount", doc.paid_amount)
         else:
             frappe.db.set_value("Unit Rent Detail", revenue_share_detail, "revenue_share_paid_amount", 0)
+
+
+def unlink_unit_maintenance_details(doc, method):
+    maintenance_details = frappe.db.get_all("Unit Maintenance Detail", filters={"payment_entry": doc.name}, fields=["name"])
+    for maintenance_detail in maintenance_details:
+        frappe.db.set_value("Unit Maintenance Detail", maintenance_detail.name, "payment_entry", None)
+    frappe.msgprint(f"Unit maintenance unlinked successfully for payment entry: {doc.name}", alert=True, indicator='green')
 
 
 @frappe.whitelist()
