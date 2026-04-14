@@ -64,13 +64,19 @@ class unit(Document):
             
             self.rent_contract_details = []
             base_rent = self.monthly_rent_amount or 0
-            increase_percent = flt(self.rent_contract_increase_percent or 0) / 100 if flt(self.rent_contract_increase_percent or 0) > 0 else 0
-            
+            increase_type = (self.yearly_increase_type or "").strip()
+
             for i in range(self.rent_contract_duration):
                 # Calculate which year we're in (0-indexed)
                 year = i // 12
-                # Calculate rent with yearly increase
-                current_rent = base_rent * ((1 + increase_percent) ** year)
+                if increase_type == "Amount":
+                    current_rent = base_rent + flt(self.yearly_increase_amount or 0)
+                elif increase_type == "Percentage":
+                    pct = flt(self.rent_contract_increase_percent or 0)
+                    increase_percent = pct / 100 if pct > 0 else 0
+                    current_rent = base_rent * ((1 + increase_percent) ** year)
+                else:
+                    current_rent = base_rent
                 
                 # Calculate month start date
                 month_start = add_to_date(self.rent_contract_start_date, months=i)

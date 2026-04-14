@@ -274,7 +274,7 @@ function generate_rent_details(frm) {
 		freeze_message: 'Generating rent details...',
 		callback: function (r) {
 			frm.refresh_field("rent_contract_details");
-			frm.dirty = true;
+			frm.dirty();
 		}
 	});
 };

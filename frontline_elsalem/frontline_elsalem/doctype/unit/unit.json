@@ -53,6 +53,8 @@
   "is_revenue_share",
   "column_break_abav",
   "monthly_rent_amount",
+  "yearly_increase_type",
+  "yearly_increase_amount",
   "rent_contract_increase_percent",
   "revenue_percent",
   "section_break_ffvb",
@@ -360,9 +362,11 @@
    "label": "Monthly Rent Amount"
   },
   {
+   "depends_on": "eval:doc.yearly_increase_type == \"Percentage\";",
    "fieldname": "rent_contract_increase_percent",
    "fieldtype": "Percent",
-   "label": "Yearly Increase Percentage"
+   "label": "Yearly Increase Percentage",
+   "mandatory_depends_on": "eval:doc.yearly_increase_type == \"Percentage\";"
   },
   {
    "depends_on": "eval:doc.unit_status == \"Rent\";",
@@ -502,12 +506,25 @@
    "fieldtype": "Table",
    "label": "Maintenance Details",
    "options": "Unit Maintenance Detail"
+  },
+  {
+   "fieldname": "yearly_increase_type",
+   "fieldtype": "Select",
+   "label": "Yearly Increase Type",
+   "options": "\nAmount\nPercentage"
+  },
+  {
+   "depends_on": "eval:doc.yearly_increase_type == \"Amount\";",
+   "fieldname": "yearly_increase_amount",
+   "fieldtype": "Currency",
+   "label": "Amount",
+   "mandatory_depends_on": "eval:doc.yearly_increase_type == \"Amount\";"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-08 17:29:25.082662",
+ "modified": "2026-04-14 12:56:11.437579",
  "modified_by": "Administrator",
  "module": "Frontline Elsalem",
  "name": "unit",
