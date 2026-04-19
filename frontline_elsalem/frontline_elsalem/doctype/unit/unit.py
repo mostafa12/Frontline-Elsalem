@@ -65,42 +65,55 @@ class unit(Document):
             self.rent_contract_details = []
             base_rent = self.monthly_rent_amount or 0
             increase_type = (self.yearly_increase_type or "").strip()
+            rent_type = (self.rent_type or "Monthly").strip()
 
-            for i in range(self.rent_contract_duration):
-                # Calculate which year we're in (0-indexed)
+            i = 0
+            while i < self.rent_contract_duration:
+                if rent_type == "Quarterly":
+                    period_months = min(3, self.rent_contract_duration - i)
+                else:
+                    period_months = 1
+
+                # Calculate which year we're in (0-indexed) from period start month
                 year = i // 12
                 if increase_type == "Amount":
-                    current_rent = base_rent + flt(self.yearly_increase_amount or 0)
+                    monthly_rent = base_rent + (flt(self.yearly_increase_amount or 0) * year) if year > 0 else base_rent
                 elif increase_type == "Percentage":
                     pct = flt(self.rent_contract_increase_percent or 0)
                     increase_percent = pct / 100 if pct > 0 else 0
-                    current_rent = base_rent * ((1 + increase_percent) ** year)
+                    monthly_rent = base_rent * ((1 + increase_percent) ** year)
                 else:
-                    current_rent = base_rent
-                
-                # Calculate month start date
-                month_start = add_to_date(self.rent_contract_start_date, months=i)
-                # Calculate month end date (start of next month minus 1 day)
-                next_month_start = add_to_date(self.rent_contract_start_date, months=i+1)
-                month_end = getdate(next_month_start) - relativedelta(days=1)
+                    monthly_rent = base_rent
+
+                current_rent = monthly_rent
+
+                period_start = add_to_date(self.rent_contract_start_date, months=i)
+                next_period_start = add_to_date(self.rent_contract_start_date, months=i + period_months)
+                period_end = getdate(next_period_start) - relativedelta(days=1)
 
                 revenue_share_amount = 0
                 if self.brand_name == 'تاون تيم':
-                    townteam_amount = get_townteam_net_amount(month_start, month_end)
+                    townteam_amount = get_townteam_net_amount(period_start, period_end)
                     revenue_share_amount = townteam_amount * (flt(self.revenue_percent) / 100) if flt(self.revenue_percent) > 0 else 0
 
                 required_amount = 0
                 if revenue_share_amount > current_rent:
                     required_amount = revenue_share_amount - current_rent
 
+                payment_type = (
+                    'إيجار شهرى' if rent_type == "Monthly" else 'إيجار ربع سنوى'
+                )
+
                 self.append('rent_contract_details', {
-                    'payment_type': 'إيجار شهرى',
+                    'payment_type': payment_type,
                     'monthly_rent_amount': current_rent,
-                    'revenue_share_amount': revenue_share_amount if getdate() >= month_end else 0,
-                    'rent_date': month_start, # Month start date
-                    'revenue_share_date': month_end, # Month end date,
+                    'revenue_share_amount': revenue_share_amount if getdate() >= period_end else 0,
+                    'rent_date': period_start,
+                    'revenue_share_date': period_end,
                     'required_amount': required_amount
                 })
+
+                i += period_months
 
 
     @frappe.whitelist()

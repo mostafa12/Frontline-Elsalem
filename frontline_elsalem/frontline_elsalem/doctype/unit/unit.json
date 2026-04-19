@@ -52,6 +52,7 @@
   "rent_contract_end_date",
   "is_revenue_share",
   "column_break_abav",
+  "rent_type",
   "monthly_rent_amount",
   "yearly_increase_type",
   "yearly_increase_amount",
@@ -359,7 +360,14 @@
   {
    "fieldname": "monthly_rent_amount",
    "fieldtype": "Currency",
-   "label": "Monthly Rent Amount"
+   "label": "Rent Amount"
+  },
+  {
+   "default": "Monthly",
+   "fieldname": "rent_type",
+   "fieldtype": "Select",
+   "label": "Rent Type",
+   "options": "Monthly\nQuarterly"
   },
   {
    "depends_on": "eval:doc.yearly_increase_type == \"Percentage\";",
